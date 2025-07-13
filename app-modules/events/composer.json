@@ -1,0 +1,24 @@
+{
+	"name": "modules/events",
+	"description": "",
+	"type": "library",
+	"version": "1.0",
+	"license": "proprietary",
+	"require": {},
+	"autoload": {
+		"psr-4": {
+			"Modules\\Events\\": "src/",
+			"Modules\\Events\\Tests\\": "tests/",
+			"Modules\\Events\\Database\\Factories\\": "database/factories/",
+			"Modules\\Events\\Database\\Seeders\\": "database/seeders/"
+		}
+	},
+	"minimum-stability": "stable",
+	"extra": {
+		"laravel": {
+			"providers": [
+				"Modules\\Events\\Providers\\EventsServiceProvider"
+			]
+		}
+	}
+}
