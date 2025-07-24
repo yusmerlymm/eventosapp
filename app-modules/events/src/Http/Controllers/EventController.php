@@ -27,7 +27,7 @@ class EventController extends Controller
             'fecha_fin' => 'required|date',
             'ubicacion' => 'required|string|max:255',
             'capacidad_max' => 'required|integer|min:1',
-            'ruta_img' => 'required|string|max:2048', 
+            'ruta_img' => 'nullable|string|max:2048', 
         ]);
 
         if ($validaciones->fails()) {
