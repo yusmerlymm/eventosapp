@@ -3,6 +3,7 @@
 namespace Modules\Events\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Modules\Events\Models\EventsCategory;
 
 class Event extends Model
 {
@@ -18,4 +19,8 @@ class Event extends Model
     ];
 
     public $timestamps = true;
+
+    public function category(){
+        return $this->belongsTo(EventsCategory::class, 'id_categoria_evento');
+    }
 }
