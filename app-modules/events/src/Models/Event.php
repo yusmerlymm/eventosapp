@@ -5,7 +5,7 @@ namespace Modules\Events\Models;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Events\Models\EventsCategory;
 use Modules\Events\Models\EventsType;
-
+use Modules\Events\Models\EventStatus;
 class Event extends Model
 {
     protected $table = 'events';
@@ -18,7 +18,8 @@ class Event extends Model
         'ubicacion',
         'capacidad_max',
         'id_categoria_evento',
-        'id_tipo_evento'
+        'id_tipo_evento',
+        'status'
     ];
 
     public $timestamps = true;
@@ -28,5 +29,8 @@ class Event extends Model
     }
     public function type(){
         return $this->belongsTo(EventsType::class,'id_tipo_evento');
+    }
+    public function eventStatus(){
+        return $this->belongsTo(EventStatus::class, 'status');
     }
 }
