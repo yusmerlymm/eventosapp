@@ -7,6 +7,8 @@ use Modules\Events\Models\EventsCategory;
 use Modules\Events\Models\EventsType;
 use Modules\Events\Models\EventStatus;
 use Modules\Events\Models\Venue;
+use Modules\Events\Models\EventsImg;
+
 class Event extends Model
 {
     protected $table = 'events';
@@ -35,8 +37,13 @@ class Event extends Model
     public function eventStatus(){
         return $this->belongsTo(EventStatus::class, 'status');
     }
-
     public function venues(){
         return $this->belongsTo(Venue::class, 'venues_id');
+    }
+    public function images(){
+        return $this->hasMany(EventsImg::class, 'id_evento');
+    }
+    public function imgPrincipal(){
+        return $this->hasOne(EventsImg::class, 'id_evento')->where('es_principal', true);
     }
 }
