@@ -3,6 +3,7 @@
 namespace Modules\Events\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Modules\Events\Models\Venue;
 
 class VenueStatuses extends Model
 {
@@ -13,5 +14,10 @@ class VenueStatuses extends Model
     ];
 
     public $timestamps = false;
+
+    public function eventsVenues()
+    {
+        return $this->hasMany(Venue::class, 'venue_general_status_id');
+    }
 
 }
