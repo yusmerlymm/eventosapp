@@ -15,10 +15,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             \Modules\Events\Database\Seeders\EventsCategorySeeder::class,
-
             \Modules\Events\Database\Seeders\EventStatusSeeder::class,
-
             \Modules\Events\Database\Seeders\VenueStatusesSeeder::class,
+            \Modules\Events\Database\Seeders\AvailabilityStatusesSeeder::class,
 
         ]);
         // User::factory(10)->create();
