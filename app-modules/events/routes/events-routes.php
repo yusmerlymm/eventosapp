@@ -1,10 +1,17 @@
 <?php
  use Illuminate\Support\Facades\Route;
  use Modules\Events\Http\Controllers\EventController;
+ use Modules\Events\Http\Controllers\VenueController;
 
+//  Grupo de rutas para api/events
  Route::middleware('api')->prefix('api/events')->group(function () {
     Route::get('/', [EventController::class, 'index']);
     Route::post('/create', [EventController::class, 'store']);
+});
+
+// Grupo de rutas para api/admin
+ Route::middleware('api')->prefix('api/admin')->group(function () {
+    Route::get('/venues/available', [VenueController::class, 'getAvailableVenues']);
 });
 
 
