@@ -25,9 +25,8 @@ class EventController extends Controller
             'descripcion' => 'required|string|max:255',
             'fecha_inicio' => 'required|date',
             'fecha_fin' => 'required|date',
-            'ubicacion' => 'required|string|max:255',
             'capacidad_max' => 'required|integer|min:1',
-            'ruta_img' => 'nullable|string|max:2048', 
+            'venues_id' => 'required|integer|min:1',
         ]);
 
         if ($validaciones->fails()) {
@@ -38,13 +37,14 @@ class EventController extends Controller
             $event->descripcion = $request->descripcion;
             $event->fecha_inicio = $request->fecha_inicio;
             $event->fecha_fin = $request->fecha_fin;
-            $event->ubicacion = $request->ubicacion;
             $event->capacidad_max = $request->capacidad_max;
+            $event->venues_id = $request->venues_id;
 
-            if ($request->hasFile('ruta_img')) {
-                $rutaImg = $request->file('ruta_img')->store('eventos', 'public');
-                $event->ruta_img = $rutaImg;
-            }
+            // se cambiara la logica de guardado de las imagenes
+            // if ($request->hasFile('ruta_img')) {
+            //     $rutaImg = $request->file('ruta_img')->store('eventos', 'public');
+            //     $event->ruta_img = $rutaImg;
+            // }
 
             $event->save();
 
