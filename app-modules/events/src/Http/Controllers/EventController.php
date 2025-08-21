@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 
-
 use Modules\Events\Models\Event;
 
 class EventController extends Controller
@@ -16,7 +15,8 @@ class EventController extends Controller
 
         // $events = Event::orderBy("created_at","desc")->paginate(10);
         // return response()->json($events);
-        return response()->json(Event::all());
+        $events = Event::with('venues')->get();
+        return response()->json($events);
     }
 
     public function store(Request $request){
@@ -27,6 +27,9 @@ class EventController extends Controller
             'fecha_fin' => 'required|date',
             'capacidad_max' => 'required|integer|min:1',
             'venues_id' => 'required|integer|min:1',
+            'categoryId' => 'required|integer|min:1',
+            'typeId' => 'required|integer|min:1',
+            'status' => 'required|integer|min:1',
         ]);
 
         if ($validaciones->fails()) {
@@ -39,6 +42,9 @@ class EventController extends Controller
             $event->fecha_fin = $request->fecha_fin;
             $event->capacidad_max = $request->capacidad_max;
             $event->venues_id = $request->venues_id;
+            $event->id_categoria_evento = $request->categoryId;
+            $event->id_tipo_evento = $request->typeId;
+            $event->status = $request->status;
 
             // se cambiara la logica de guardado de las imagenes
             // if ($request->hasFile('ruta_img')) {
