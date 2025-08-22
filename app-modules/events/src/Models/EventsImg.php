@@ -3,6 +3,7 @@
 namespace Modules\Events\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Modules\Events\Models\Event;
 
 class EventsImg extends Model
@@ -20,5 +21,10 @@ class EventsImg extends Model
     public function event()
     {
         return $this->belongsTo(Event::class, 'id_evento');
+    }
+
+    public function getAbsoluteUrlAttribute()
+    {
+        return $this->url_imagen? url(storage::url($this->url_imagen)): null;
     }
 }
