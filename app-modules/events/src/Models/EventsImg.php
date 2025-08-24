@@ -22,9 +22,4 @@ class EventsImg extends Model
     {
         return $this->belongsTo(Event::class, 'id_evento');
     }
-
-    public function getAbsoluteUrlAttribute()
-    {
-        return $this->url_imagen? url(storage::url($this->url_imagen)): null;
-    }
 }
