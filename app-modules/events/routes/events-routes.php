@@ -9,6 +9,7 @@
  Route::middleware('api')->prefix('api/events')->group(function () {
     Route::get('/', [EventController::class, 'index']);
     Route::post('/create', [EventController::class, 'store']);
+    Route::get('/{id}', [EventController::class, 'show']);
 });
 
 // Grupo de rutas para api/admin

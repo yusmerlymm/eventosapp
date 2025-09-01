@@ -15,14 +15,9 @@ class EventController extends Controller
 {
     public function index(Request $request)
     {
-        // dd('Entró al index');
-
-        // $events = Event::orderBy("created_at","desc")->paginate(10);
-        // return response()->json($events);
         $events = Event::with('venues', 'imgPrincipal')->get();
         return response()->json($events->toArray());
     }
-
     public function store(Request $request)
     {
         $validaciones = Validator::make($request->all(), [
@@ -89,6 +84,10 @@ class EventController extends Controller
                 'detalle' => $e->getMessage()
             ], 500);
         }
+    }
+    public function show($id){
+        $events = Event::with(['venues', 'imgPrincipal'])->findOrFail($id); 
+        return response()->json($events);
     }
 }
 
