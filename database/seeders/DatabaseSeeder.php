@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             \Modules\Events\Database\Seeders\EventStatusSeeder::class,
             \Modules\Events\Database\Seeders\VenueStatusesSeeder::class,
             \Modules\Events\Database\Seeders\AvailabilityStatusesSeeder::class,
+            \Modules\Events\Database\Seeders\EventsTypeSeeder::class,
 
         ]);
         // User::factory(10)->create();

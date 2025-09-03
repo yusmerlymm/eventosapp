@@ -3,6 +3,7 @@
 namespace Modules\Events\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Modules\Events\Models\Event;
 
 class EventsImg extends Model
