@@ -15,8 +15,8 @@ class EventController extends Controller
 {
     public function index(Request $request)
     {
-        $events = Event::with('venues', 'imgPrincipal')->get();
-        return response()->json($events->toArray());
+        $events = Event::with(['venues', 'imgPrincipal', 'type', 'category'])->get();
+        return response()->json($events);
     }
     public function store(Request $request)
     {
@@ -86,7 +86,7 @@ class EventController extends Controller
         }
     }
     public function show($id){
-        $events = Event::with(['venues', 'imgPrincipal'])->findOrFail($id); 
+        $events = Event::with(['venues', 'type', 'category', 'imgPrincipal'])->findOrFail($id); 
         return response()->json($events);
     }
 }
