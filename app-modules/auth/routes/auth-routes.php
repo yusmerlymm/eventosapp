@@ -14,13 +14,11 @@ Route::middleware('api')->prefix('api/auth')->group(function () {
     Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 
     // Email Verification
-    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-        ->middleware('auth:sanctum')
-        ->name('verification.verify');
-
     Route::post('/email/resend', [EmailVerificationController::class, 'resend'])
         ->middleware('auth:sanctum')
         ->name('verification.send');
+
+    Route::post('/verify-consume', [EmailVerificationController::class, 'consume']);
 });
 
 // ruta para obtener el perfil de usuario autenticado

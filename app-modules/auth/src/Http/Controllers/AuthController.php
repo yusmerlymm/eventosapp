@@ -28,10 +28,14 @@ class AuthController
             'password' => Hash::make($validated['password']),
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $user->sendEmailVerificationNotification(); 
+
+        // token limitado solo para el reenvio
+        $token = $user->createToken('pre-verification')->plainTextToken;
 
         return response()->json([
-            'user' => new UserResource($user),
+            'message' => 'Usuario registrado. Por favor, verifica tu correo electrónico.',
+            'user' => new UserResource($user), 
             'access_token' => $token,
         ]);
     }
