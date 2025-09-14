@@ -55,7 +55,7 @@ class AuthController
         $user = User::where('email', $validated['email'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
-            return response()->json(['message' => 'Credenciales inválidas'], 401);
+            return response()->json(['message' => 'Correo o contraseña incorrectos'], 401);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
