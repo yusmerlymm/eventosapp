@@ -26,12 +26,14 @@ class AuthController
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'role' => $validated['role'] ?? 'comprador', // Default: comprador
+            'email_verified_at' => now(), // Auto-verificar por ahora
         ]);
 
-        $user->sendEmailVerificationNotification(); 
+        // $user->sendEmailVerificationNotification(); // Desactivado temporalmente
 
         // token limitado solo para el reenvio
-        $token = $user->createToken('pre-verification')->plainTextToken;
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Usuario registrado. Por favor, verifica tu correo electrónico.',
@@ -86,6 +88,7 @@ class AuthController
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:6',
+            'role' => 'nullable|string|in:super_admin,comprador',
         ];
     }
 

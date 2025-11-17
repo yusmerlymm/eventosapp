@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -6,23 +7,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('events_category', function (Blueprint $table) {
-            $table->id();
-            $table->string('nombre_categoria');
-            $table->timestamps();
-        });
+        if (Schema::hasTable('events') && ! Schema::hasColumn('events', 'ruta_img')) {
+            Schema::table('events', function (Blueprint $table) {
+                $table->string('ruta_img')->default('');
+            });
+        }
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('table_events_category');
+        if (Schema::hasTable('events') && Schema::hasColumn('events', 'ruta_img')) {
+            Schema::table('events', function (Blueprint $table) {
+                $table->dropColumn('ruta_img');
+            });
+        }
     }
 };

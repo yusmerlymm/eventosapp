@@ -14,8 +14,9 @@ return [
     | specified when running a cache operation inside the application.
     |
     */
+'default' => env('CACHE_STORE', 'file'),
 
-    'default' => env('CACHE_STORE', 'database'),
+    
 
     /*
     |--------------------------------------------------------------------------

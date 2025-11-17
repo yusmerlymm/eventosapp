@@ -8,6 +8,7 @@ use Modules\Events\Models\EventsType;
 use Modules\Events\Models\EventStatus;
 use Modules\Events\Models\Venue;
 use Modules\Events\Models\EventsImg;
+use Modules\Events\Models\EventTicketType;
 
 class Event extends Model
 {
@@ -23,19 +24,26 @@ class Event extends Model
         'id_categoria_evento',
         'id_tipo_evento',
         'status',
-        'venues_id'
+        'venues_id',
+        'audiencia',
+        'venta_inicio',
+        'venta_fin'
     ];
 
     public $timestamps = true;
+
+    protected $casts = [
+        'venta_inicio' => 'datetime',
+        'venta_fin' => 'datetime',
+        'fecha_inicio' => 'datetime',
+        'fecha_fin' => 'datetime',
+    ];
 
     public function category(){
         return $this->belongsTo(EventsCategory::class, 'id_categoria_evento');
     }
     public function type(){
         return $this->belongsTo(EventsType::class,'id_tipo_evento');
-    }
-    public function eventStatus(){
-        return $this->belongsTo(EventStatus::class, 'status');
     }
     public function venues(){
         return $this->belongsTo(Venue::class, 'venues_id');
@@ -45,5 +53,13 @@ class Event extends Model
     }
     public function imgPrincipal(){
         return $this->hasOne(EventsImg::class, 'id_evento')->where('es_principal', true);
+    }
+    public function ticketTypes()
+    {
+        return $this->hasMany(EventTicketType::class, 'event_id');
+    }
+    public function eventStatus()
+    {
+        return $this->belongsTo(EventStatus::class, 'status');
     }
 }

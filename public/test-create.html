@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Crear Evento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-4">Test - Crear Evento (v3.0)</h1>
+        
+        <div id="status" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+            <strong>Estado:</strong> <span id="status-text">Iniciando...</span>
+        </div>
+
+        <div id="logs" class="mb-4 p-3 bg-gray-50 border rounded text-xs font-mono max-h-60 overflow-y-auto"></div>
+
+        <button onclick="testAPIs()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Probar APIs
+        </button>
+    </div>
+
+    <script>
+        const log = (msg) => {
+            const logsDiv = document.getElementById('logs');
+            logsDiv.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        };
+
+        const setStatus = (msg, color = 'blue') => {
+            document.getElementById('status-text').textContent = msg;
+            document.getElementById('status').className = `mb-4 p-3 border rounded bg-${color}-50 border-${color}-200`;
+        };
+
+        async function testAPIs() {
+            log('=== INICIANDO PRUEBAS ===');
+            log(`Origin: ${window.location.origin}`);
+            log(`Pathname: ${window.location.pathname}`);
+            
+            const baseUrl = window.location.origin;
+            log(`Base URL: ${baseUrl}`);
+
+            try {
+                // Test 1: Categories
+                log('');
+                log('Test 1: Cargando categorías...');
+                const catUrl = `${baseUrl}/api/admin/categories/available`;
+                log(`URL: ${catUrl}`);
+                const catRes = await fetch(catUrl);
+                log(`Status: ${catRes.status} ${catRes.statusText}`);
+                
+                if (catRes.ok) {
+                    const cats = await catRes.json();
+                    log(`✅ Categorías cargadas: ${cats.length} items`);
+                    log(`Primera categoría: ${JSON.stringify(cats[0])}`);
+                } else {
+                    const error = await catRes.text();
+                    log(`❌ Error: ${error}`);
+                }
+
+                // Test 2: Venues
+                log('');
+                log('Test 2: Cargando venues...');
+                const venueUrl = `${baseUrl}/api/admin/venues/available`;
+                log(`URL: ${venueUrl}`);
+                const venueRes = await fetch(venueUrl);
+                log(`Status: ${venueRes.status} ${venueRes.statusText}`);
+                
+                if (venueRes.ok) {
+                    const venues = await venueRes.json();
+                    log(`✅ Venues cargados: ${venues.length} items`);
+                } else {
+                    const error = await venueRes.text();
+                    log(`❌ Error: ${error}`);
+                }
+
+                // Test 3: Statuses
+                log('');
+                log('Test 3: Cargando estados...');
+                const statusUrl = `${baseUrl}/api/admin/statuses`;
+                log(`URL: ${statusUrl}`);
+                const statusRes = await fetch(statusUrl);
+                log(`Status: ${statusRes.status} ${statusRes.statusText}`);
+                
+                if (statusRes.ok) {
+                    const statuses = await statusRes.json();
+                    log(`✅ Estados cargados: ${statuses.length} items`);
+                } else {
+                    const error = await statusRes.text();
+                    log(`❌ Error: ${error}`);
+                }
+
+                log('');
+                log('=== PRUEBAS COMPLETADAS ===');
+                setStatus('Pruebas completadas - Revisa los logs', 'green');
+
+            } catch (error) {
+                log('');
+                log(`❌ ERROR FATAL: ${error.message}`);
+                log(`Stack: ${error.stack}`);
+                setStatus('Error en las pruebas', 'red');
+            }
+        }
+
+        // Auto-ejecutar al cargar
+        window.addEventListener('load', () => {
+            setStatus('Listo para probar', 'green');
+            log('Página cargada. Haz clic en "Probar APIs"');
+        });
+    </script>
+</body>
+</html>
