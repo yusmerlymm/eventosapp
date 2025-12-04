@@ -1,0 +1,345 @@
+﻿@extends('auth::layout')
+
+@section('title', 'Reportes de ventas')
+
+@push('styles')
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #printable-area, #printable-area * {
+            visibility: visible;
+        }
+        #printable-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+            background: white;
+        }
+    }
+    #printable-area {
+        padding: 20px;
+        background: white;
+    }
+</style>
+@endpush
+
+@section('content')
+<div class="min-vh-100 bg-light py-4">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h4 fw-semibold mb-1">Reportes de ventas por evento</h1>
+                <p class="text-muted small mb-0">Filtra por periodo para ver el resumen de ventas.</p>
+            </div>
+            <a href="/admin/dashboard" class="btn btn-outline-primary btn-sm">Volver al dashboard</a>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-semibold mb-3">Periodo</h2>
+                <div class="btn-group" role="group" aria-label="Rango de fechas">
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-range="daily">Hoy</button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-range="weekly">Últimos 7 días</button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-range="monthly">Últimos 30 días</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h2 class="h6 fw-semibold mb-0">Ventas por evento</h2>
+                        <small class="text-muted" id="rep-period-label"></small>
+                    </div>
+                    <button type="button" id="btn-export-pdf" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-file-pdf"></i> Descargar PDF
+                    </button>
+                </div>
+                
+                <div id="printable-area">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h4 class="mb-0">Reporte de ventas por evento</h4>
+                            <p class="text-muted small mb-0" id="report-period-text"></p>
+                        </div>
+                        <div class="text-muted small">
+                            Generado el: <span id="report-date"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Evento</th>
+                                    <th class="text-end">Entradas</th>
+                                    <th class="text-end">Importe total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rep-table-body">
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted small py-3">Selecciona un periodo para ver los datos.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="row">
+                            <div class="col-6">
+                                <p class="mb-1"><strong>Total de entradas:</strong> <span id="report-total-tickets">0</span></p>
+                            </div>
+                            <div class="col-6 text-end">
+                                <p class="mb-1"><strong>Importe total:</strong> $<span id="report-total-amount">0.00</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Incluir las bibliotecas necesarias -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+<script>
+// Configuración global para jsPDF
+const { jsPDF } = window.jspdf;
+
+// Variables globales
+const rangeButtons = document.querySelectorAll('[data-range]');
+let currentRange = 'daily';
+let lastReportData = null;
+
+// Función para formatear fechas
+function formatDate(date) {
+    const options = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    return new Date(date).toLocaleDateString('es-ES', options);
+}
+
+// Función para cargar el reporte
+async function loadReport(range) {
+    currentRange = range;
+    
+    // Actualizar botones activos
+    rangeButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-range') === range);
+    });
+
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        alert('Debes iniciar sesión como administrador.');
+        return;
+    }
+
+    try {
+        const params = new URLSearchParams({ range });
+        const res = await fetch(`/api/admin/reports/sales?${params.toString()}`, {
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!res.ok) {
+            throw new Error('Error al cargar los datos');
+        }
+
+        const data = await res.json();
+        lastReportData = data;
+
+        // Actualizar la interfaz
+        updateUI(data);
+        
+    } catch (error) {
+        console.error('Error al cargar el reporte:', error);
+        alert('Error al cargar el reporte. Por favor, inténtalo de nuevo.');
+    }
+}
+
+// Función para actualizar la interfaz
+function updateUI(data) {
+    const { summary = {}, events = [] } = data;
+    
+    console.log('Datos recibidos para actualizar UI:', {summary, events});
+    
+    // Actualizar resumen
+    document.getElementById('rep-total-tickets').textContent = summary.total_tickets || '0';
+    document.getElementById('rep-total-amount').textContent = (summary.total_amount || 0).toFixed(2);
+    document.getElementById('rep-events-count').textContent = summary.events_count || '0';
+    document.getElementById('rep-period-label').textContent = summary.label || '';
+    
+    // Actualizar tabla
+    const tbody = document.getElementById('rep-table-body');
+    tbody.innerHTML = '';
+
+    if (!events || events.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td colspan="3" class="text-center text-muted small py-3">No hay ventas en este periodo.</td>';
+        tbody.appendChild(tr);
+        return;
+    }
+
+    events.forEach(event => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${event.event_name || 'Sin nombre'}</td>
+            <td class="text-end">${event.total_tickets || 0}</td>
+            <td class="text-end">$${parseFloat(event.total_amount || 0).toFixed(2)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    // Forzar actualización de la interfaz
+    document.getElementById('printable-area').style.display = 'block';
+    
+    // Actualizar también los datos que se muestran en el área de impresión
+    document.getElementById('report-date').textContent = formatDate(new Date());
+    document.getElementById('report-period-text').textContent = `Período: ${summary.label || 'No especificado'}`;
+    document.getElementById('report-total-tickets').textContent = summary.total_tickets || '0';
+    document.getElementById('report-total-amount').textContent = (summary.total_amount || 0).toFixed(2);
+}
+
+// Función para generar PDF
+async function generatePDF() {
+    if (!lastReportData) {
+        alert('No hay datos para exportar.');
+        return;
+    }
+
+    const btn = document.getElementById('btn-export-pdf');
+    const originalText = btn.innerHTML;
+    
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generando...';
+
+        // Actualizar la información del reporte
+        document.getElementById('report-date').textContent = formatDate(new Date());
+        document.getElementById('report-period-text').textContent = 
+            `Período: ${lastReportData.summary?.label || 'No especificado'}`;
+        document.getElementById('report-total-tickets').textContent = 
+            lastReportData.summary?.total_tickets || 0;
+        document.getElementById('report-total-amount').textContent = 
+            (lastReportData.summary?.total_amount || 0).toFixed(2);
+
+        // Obtener el elemento a convertir
+        const element = document.getElementById('printable-area');
+        const originalDisplay = element.style.display;
+        
+        // Mostrar el área imprimible
+        element.style.display = 'block';
+        
+        // Configuración de html2canvas
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            onclone: (clonedDoc) => {
+                // Asegurar que los estilos se apliquen correctamente
+                const style = clonedDoc.createElement('style');
+                style.textContent = `
+                    * {
+                        font-family: Arial, sans-serif !important;
+                    }
+                    body {
+                        margin: 0;
+                        padding: 20px;
+                        background: white;
+                        color: #333;
+                        font-size: 12px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 10px 0;
+                    }
+                    th, td {
+                        padding: 8px;
+                        text-align: left;
+                        border: 1px solid #ddd;
+                    }
+                    th {
+                        background-color: #f5f5f5;
+                        font-weight: 500;
+                    }
+                    h4 {
+                        color: #333;
+                        margin: 0 0 10px 0;
+                    }
+                    .text-muted {
+                        color: #6c757d !important;
+                    }
+                `;
+                clonedDoc.head.appendChild(style);
+            }
+        });
+
+        // Crear PDF
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const imgWidth = 190; // Ancho máximo en mm (A4 con márgenes)
+        const pageHeight = 277; // Altura de página A4 en mm
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 10; // Margen superior en mm
+        
+        // Agregar la primera página
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight - 20;
+        
+        // Agregar páginas adicionales si es necesario
+        while (heightLeft >= 0) {
+            pdf.addPage();
+            position = heightLeft - imgHeight;
+            pdf.addImage(imgData, 'PNG', 10, -position, imgWidth, imgHeight);
+            heightLeft -= pageHeight - 20;
+        }
+        
+        // Descargar el PDF
+        pdf.save(`reporte_ventas_${currentRange}.pdf`);
+
+    } catch (error) {
+        console.error('Error al generar el PDF:', error);
+        alert('Error al generar el PDF. Por favor, inténtalo de nuevo.');
+    } finally {
+        // Restaurar el botón
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+// Inicializar la aplicación cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+    // Configurar manejadores de eventos
+    rangeButtons.forEach(btn => {
+        btn.addEventListener('click', () => loadReport(btn.getAttribute('data-range')));
+    });
+
+    document.getElementById('btn-export-pdf')?.addEventListener('click', generatePDF);
+
+    // Cargar el reporte inicial
+    loadReport('daily');
+});
+</script>
+@endsection

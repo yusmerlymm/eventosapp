@@ -98,6 +98,9 @@ Route::middleware(['api', 'auth:sanctum', 'role:super_admin'])->prefix('api/admi
             'events' => $rows,
         ]);
     });
+
+    // Ruta para generar el PDF del informe de ventas
+    Route::get('/reports/sales/pdf', [\Modules\Auth\Http\Controllers\ReportController::class, 'salesReportPdf']);
 });
 
 // Web Routes - Vistas

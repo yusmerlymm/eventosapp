@@ -1,4 +1,4 @@
-@extends('auth::layout')
+﻿@extends('auth::layout')
 
 @section('title', 'Reportes de ventas')
 
@@ -58,7 +58,9 @@
                         <h2 class="h6 fw-semibold mb-0">Ventas por evento</h2>
                         <small class="text-muted" id="rep-period-label"></small>
                     </div>
-                    <button type="button" id="btn-export-csv" class="btn btn-outline-primary btn-sm">Descargar Excel</button>
+                    <button type="button" id="btn-export-pdf" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-file-earmark-pdf me-1"></i> Descargar PDF
+                    </button>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
@@ -82,108 +84,137 @@
 </div>
 
 <script>
-const rangeButtons = document.querySelectorAll('[data-range]');
-let currentRange = 'daily';
-let lastReportData = null;
+document.addEventListener('DOMContentLoaded', function() {
+    const rangeButtons = document.querySelectorAll('[data-range]');
+    let currentRange = 'daily';
+    let lastReportData = null;
 
-async function loadReport(range) {
-    currentRange = range;
-    rangeButtons.forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-range') === range);
-    });
+    async function loadReport(range) {
+        currentRange = range;
+        rangeButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-range') === range);
+        });
 
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-        alert('Debes iniciar sesión como administrador.');
-        return;
-    }
-
-    const params = new URLSearchParams({ range });
-
-    const res = await fetch('/api/admin/reports/sales?' + params.toString(), {
-        headers: {
-            'Authorization': 'Bearer ' + token,
-            'Accept': 'application/json'
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            alert('Debes iniciar sesión como administrador.');
+            return;
         }
-    });
 
-    const data = await res.json();
+        const params = new URLSearchParams({ range });
 
-    // Guardar última data para exportar
-    lastReportData = data;
-    const totalTickets = Number(data.summary.total_tickets ?? 0) || 0;
-    const totalAmount = Number(data.summary.total_amount ?? 0) || 0;
-    const eventsCount = Number(data.summary.events_count ?? 0) || 0;
+        try {
+            const res = await fetch('/api/admin/reports/sales?' + params.toString(), {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Accept': 'application/json'
+                }
+            });
 
-    document.getElementById('rep-total-tickets').textContent = totalTickets;
-    document.getElementById('rep-total-amount').textContent = totalAmount.toFixed(2);
-    document.getElementById('rep-events-count').textContent = eventsCount;
-    document.getElementById('rep-period-label').textContent = data.summary.label || '';
+            if (!res.ok) throw new Error('Error al cargar los datos');
+            
+            const data = await res.json();
 
-    const tbody = document.getElementById('rep-table-body');
-    tbody.innerHTML = '';
+            // Guardar última data para exportar
+            lastReportData = data;
+            const totalTickets = Number(data.summary.total_tickets ?? 0) || 0;
+            const totalAmount = Number(data.summary.total_amount ?? 0) || 0;
+            const eventsCount = Number(data.summary.events_count ?? 0) || 0;
 
-    if (!data.events || data.events.length === 0) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = '<td colspan="3" class="text-center text-muted small py-3">No hay ventas en este periodo.</td>';
-        tbody.appendChild(tr);
-        return;
+            document.getElementById('rep-total-tickets').textContent = totalTickets;
+            document.getElementById('rep-total-amount').textContent = totalAmount.toFixed(2);
+            document.getElementById('rep-events-count').textContent = eventsCount;
+            document.getElementById('rep-period-label').textContent = data.summary.label || '';
+
+            const tbody = document.getElementById('rep-table-body');
+            tbody.innerHTML = '';
+
+            if (!data.events || data.events.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="3" class="text-center text-muted small py-3">No hay ventas en este periodo.</td>';
+                tbody.appendChild(tr);
+                return;
+            }
+
+            data.events.forEach(ev => {
+                const totalTicketsEv = Number(ev.total_tickets ?? 0) || 0;
+                const totalAmountEv = Number(ev.total_amount ?? 0) || 0;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${ev.event_name}</td>
+                    <td class="text-end">${totalTicketsEv}</td>
+                    <td class="text-end">${totalAmountEv.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (error) {
+            console.error('Error al cargar el reporte:', error);
+            alert('Error al cargar el reporte: ' + error.message);
+        }
     }
 
-    data.events.forEach(ev => {
-        const totalTicketsEv = Number(ev.total_tickets ?? 0) || 0;
-        const totalAmountEv = Number(ev.total_amount ?? 0) || 0;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${ev.event_name}</td>
-            <td class="text-end">${totalTicketsEv}</td>
-            <td class="text-end">${totalAmountEv.toFixed(2)}</td>
-        `;
-        tbody.appendChild(tr);
+    // Manejadores de eventos para los botones de rango
+    rangeButtons.forEach(btn => {
+        btn.addEventListener('click', () => loadReport(btn.getAttribute('data-range')));
     });
-}
 
-rangeButtons.forEach(btn => {
-    btn.addEventListener('click', () => loadReport(btn.getAttribute('data-range')));
-});
+    // Función para exportar a PDF
+    const exportPdfBtn = document.getElementById('btn-export-pdf');
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', async () => {
+            if (!lastReportData || !lastReportData.events || lastReportData.events.length === 0) {
+                alert('No hay datos para exportar.');
+                return;
+            }
 
-// Exportar a CSV (compatible con Excel)
-document.getElementById('btn-export-csv').addEventListener('click', () => {
-    if (!lastReportData || !lastReportData.events || lastReportData.events.length === 0) {
-        alert('No hay datos para exportar.');
-        return;
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                alert('Debes iniciar sesión como administrador.');
+                return;
+            }
+
+            try {
+                // Mostrar indicador de carga
+                const originalText = exportPdfBtn.innerHTML;
+                exportPdfBtn.disabled = true;
+                exportPdfBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generando...';
+
+                const response = await fetch(`/api/admin/reports/sales/pdf?range=${currentRange}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/pdf'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al generar el PDF');
+                }
+
+                // Crear y descargar el PDF
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `reporte_ventas_${currentRange}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al generar el PDF: ' + error.message);
+            } finally {
+                // Restaurar el botón
+                if (exportPdfBtn) {
+                    exportPdfBtn.disabled = false;
+                    exportPdfBtn.innerHTML = '<i class="bi bi-file-earmark-pdf me-1"></i> Descargar PDF';
+                }
+            }
+        });
     }
 
-    const rows = [];
-    rows.push(['Evento', 'Entradas', 'Importe total']);
-
-    lastReportData.events.forEach(ev => {
-        const totalTicketsEv = Number(ev.total_tickets ?? 0) || 0;
-        const totalAmountEv = Number(ev.total_amount ?? 0) || 0;
-        rows.push([
-            ev.event_name,
-            String(totalTicketsEv),
-            totalAmountEv.toFixed(2).replace('.', ',')
-        ]);
-    });
-
-    const csvContent = rows
-        .map(r => r.map(value => '"' + String(value).replace(/"/g, '""') + '"').join(';'))
-        .join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const fileName = `reporte_ventas_${currentRange}.csv`;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Cargar datos iniciales
+    loadReport('daily');
 });
-
-// Cargar por defecto "Hoy"
-loadReport('daily');
 </script>
 @endsection
